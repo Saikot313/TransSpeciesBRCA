@@ -1,0 +1,4 @@
+Model,Human CV F1 (mean),Human CV F1 (std),Canine Transfer F1,Canine Transfer AUC
+XGBoost,0.7601,0.0303,0.3376,0.3775
+Random Forest,0.6649,0.0154,0.3935,0.4418
+Logistic Regression,0.8001,0.0445,0.4035,0.3155
