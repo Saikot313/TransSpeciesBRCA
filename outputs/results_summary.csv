@@ -1,0 +1,5 @@
+Model,Canine CV F1 (mean),Canine CV F1 (std),Human Transfer F1,Human Transfer AUC
+XGBoost,0.8656,0.049,0.4898,0.8076
+Random Forest,0.8582,0.0399,0.822,0.9674
+SVM,0.8594,0.0237,0.7457,0.9549
+MLP,0.86,0.0488,0.6514,0.8854
