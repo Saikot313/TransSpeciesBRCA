@@ -70,12 +70,38 @@ common_canine = [s for s in expr_canine.columns if s in meta_canine.index]
 print(f"\nCanine samples with metadata: {len(common_canine)} / {expr_canine.shape[1]}")
 
 if len(common_canine) == 0:
-    # Fallback: use all canine samples, assign placeholder labels
-    print("  No metadata match found - assigning all canine samples as 'malignant' (review metadata)")
-    common_canine = list(expr_canine.columns)
-    y_canine_raw = pd.Series(["malignant"] * len(common_canine), index=common_canine)
-else:
-    y_canine_raw = meta_canine.loc[common_canine, "malignancy"]
+    # NOTE: previously this silently fell back to labeling every canine
+    # sample "malignant" (a single fake class), which would have broken
+    # label encoding downstream and defeated the whole point of the real
+    # tumor/normal labels fixed in 02_download_canine.py. Faking labels
+    # here would also make the Step 5 cross-species result meaningless,
+    # inconsistent with Project Contributions 1/2/4. Fail loudly instead
+    # so a real metadata/ID-mismatch bug gets caught and fixed, not masked.
+    raise RuntimeError(
+        "No canine samples matched between expr_canine columns and "
+        "meta_canine index - 0 overlap. This means the sample IDs in "
+        "data/canine/canine_fpkm_clean.csv and "
+        "data/canine/canine_metadata_clean.csv don't line up "
+        "(check for whitespace, case, or naming differences), or Step 2 "
+        "did not run correctly. Fix the ID mismatch before continuing - "
+        "do NOT proceed with placeholder/fabricated labels.\n"
+        f"  expr_canine.columns sample: {list(expr_canine.columns[:5])}\n"
+        f"  meta_canine.index sample:   {list(meta_canine.index[:5])}"
+    )
+
+y_canine_raw = meta_canine.loc[common_canine, "malignancy"]
+
+# Also guard against a partial-but-broken match: if every matched sample
+# came back "unknown" (see infer_label_from_name in 02_download_canine.py),
+# that's the same underlying problem as zero overlap and should fail the
+# same way rather than silently training on a meaningless label.
+if set(y_canine_raw.unique()) <= {"unknown"}:
+    raise RuntimeError(
+        "All matched canine samples have label 'unknown' - tumor/normal "
+        "status could not be parsed from the sample names in Step 2. "
+        "Check the naming convention in data/canine/canine_metadata_clean.csv "
+        "before continuing."
+    )
 
 expr_canine_lab = expr_canine[common_canine].T   # -> samples x genes
 print(f"Canine label distribution:\n{y_canine_raw.value_counts()}")
